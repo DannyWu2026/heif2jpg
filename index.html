@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>HEIC转JPG</title>
+    <!-- 使用更现代的平滑字体渲染 -->
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f6f9fc 0%, #eef2f5 100%);
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .card {
+            max-width: 820px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .header {
+            background: #1e2a3e;
+            padding: 1.6rem 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.85rem;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1::before {
+            content: "🖼️";
+            font-size: 1.8rem;
+        }
+
+        .content {
+            padding: 1.8rem 2rem 2rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #b9cedf;
+            border-radius: 1.5rem;
+            background: #fefefe;
+            padding: 1.8rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #f5faff;
+            transform: scale(0.99);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .upload-text {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .quality-section {
+            background: #f1f5f9;
+            border-radius: 1.2rem;
+            padding: 1rem 1.3rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2edf7;
+        }
+
+        .quality-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .quality-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .quality-value {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cbd5e1;
+            border-radius: 5px;
+            outline: none;
+            margin: 8px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+            border: 2px solid white;
+        }
+
+        .quality-hint {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        .preview-area {
+            background: #f8fafc;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2edf7;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .files-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .file-item {
+            background: white;
+            border-radius: 1rem;
+            padding: 0.7rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e0edf5;
+            gap: 12px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            overflow: hidden;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.85rem;
+            word-break: break-word;
+            line-height: 1.4;
+            color: #1e293b;
+        }
+
+        .file-size {
+            font-size: 0.7rem;
+            color: #5c6f87;
+            margin-top: 4px;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: 0.2s;
+            border-radius: 40px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .remove-btn:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .convert-btn {
+            background: linear-gradient(95deg, #2563eb, #1d4ed8);
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
+            margin-bottom: 1.3rem;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            background: linear-gradient(95deg, #1d4ed8, #1e3a8a);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-area {
+            background: #f1f5f9;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.2s ease;
+            border-radius: 10px;
+        }
+
+        .loading-text {
+            font-size: 0.75rem;
+            color: #2563eb;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .result-area {
+            background: #f1f5f9;
+            border-radius: 1.5rem;
+            padding: 0.2rem 0 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1rem 0.2rem;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .download-all {
+            background: #0f172a;
+            color: white;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.4rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .download-all:hover {
+            background: #1e293b;
+        }
+
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 0.5rem 1rem 1rem;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            background: white;
+            border-radius: 1rem;
+            padding: 0.7rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 4px solid #22c55e;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            gap: 12px;
+        }
+
+        .result-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .result-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .result-badge {
+            font-size: 0.7rem;
+            color: #22c55e;
+            background: #e6f7ec;
+            padding: 2px 8px;
+            border-radius: 20px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .download-single {
+            background: #f0f9ff;
+            border: 1px solid #b9d9f0;
+            border-radius: 2rem;
+            padding: 5px 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #0369a1;
+            flex-shrink: 0;
+        }
+
+        .download-single:hover {
+            background: #e0f2fe;
+        }
+
+        .empty-result {
+            text-align: center;
+            padding: 2rem;
+            color: #6c86a3;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 550px) {
+            .content {
+                padding: 1.2rem;
+            }
+            .file-item {
+                flex-wrap: wrap;
+            }
+            .file-info {
+                min-width: calc(100% - 40px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h1>HEIC 转 JPG</h1>
+    </div>
+    <div class="content">
+        <!-- 上传区域 -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">点击/拖拽上传 HEIC/HEIF 文件</div>
+            <input type="file" id="fileInput" accept=".heic,.heif,.heifs,.heics" multiple>
+        </div>
+
+        <!-- 画质控制区域 -->
+        <div class="quality-section">
+            <div class="quality-label">
+                <span class="quality-title">JPG输出画质</span>
+                <span class="quality-value" id="qualityValueDisplay">1.00 (最高)</span>
+            </div>
+            <input type="range" id="qualitySlider" min="0.1" max="1.0" step="0.01" value="1.0">
+            <div class="quality-hint">
+                <span>最低</span>
+                <span>平衡</span>
+                <span>最高</span>
+            </div>
+        </div>
+
+        <!-- 待转换列表 -->
+        <div id="previewContainer" class="preview-area" style="display: none;">
+            <div class="section-title">
+                <span>📋 待转换列表</span>
+                <span style="font-size:12px; background:#eef2ff; padding:2px 8px; border-radius:20px;" id="fileCountBadge">0</span>
+            </div>
+            <div id="fileList" class="files-list"></div>
+        </div>
+
+        <!-- 转换按钮 + 进度 -->
+        <button id="convertBtn" class="convert-btn" disabled>
+            <span>🔄</span>转换为 JPG
+        </button>
+
+        <div id="progressArea" class="progress-area" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="loading-text" id="progressStatus">准备转换...</div>
+        </div>
+
+        <!-- 转换结果 -->
+        <div id="resultArea" class="result-area" style="display: none;">
+            <div class="result-header">
+                <span class="section-title" style="margin-bottom:0;">✅ 转换结果 (JPG)</span>
+                <button id="downloadAllBtn" class="download-all">📦 打包下载全部 (ZIP)</button>
+            </div>
+            <div id="resultList" class="result-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 外部依赖库 -->
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+    (function(){
+        "use strict";
+
+        // ---------- DOM 元素 ----------
+        const DOM = {
+            uploadArea: document.getElementById('uploadArea'),
+            fileInput: document.getElementById('fileInput'),
+            previewContainer: document.getElementById('previewContainer'),
+            fileList: document.getElementById('fileList'),
+            fileCountBadge: document.getElementById('fileCountBadge'),
+            convertBtn: document.getElementById('convertBtn'),
+            progressArea: document.getElementById('progressArea'),
+            progressFill: document.getElementById('progressFill'),
+            progressStatus: document.getElementById('progressStatus'),
+            resultArea: document.getElementById('resultArea'),
+            resultList: document.getElementById('resultList'),
+            downloadAllBtn: document.getElementById('downloadAllBtn'),
+            qualitySlider: document.getElementById('qualitySlider'),
+            qualityValueDisplay: document.getElementById('qualityValueDisplay')
+        };
+
+        // ---------- 状态管理 ----------
+        let state = {
+            selectedFiles: [],          // { id, file, name, size }
+            conversionResults: [],       // { originalName, finalName, jpgBlob, jpgUrl, size }
+            nextId: 0,
+            currentQuality: 1.0
+        };
+
+        // ---------- 工具函数 ----------
+        const formatFileSize = (bytes) => {
+            if (bytes === 0) return '0 Bytes';
+            const units = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+        };
+
+        const escapeHtml = (str) => {
+            if (!str) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+            return str.replace(/[&<>]/g, m => map[m]);
+        };
+
+        const scrollToBottom = () => {
+            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 60);
+        };
+
+        const showToast = (msg, duration = 2000) => {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            Object.assign(toast.style, {
+                position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)',
+                backgroundColor: '#1e293b', color: 'white', padding: '8px 18px',
+                borderRadius: '40px', fontSize: '0.8rem', zIndex: '9999',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', whiteSpace: 'nowrap',
+                transition: 'opacity 0.25s'
+            });
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 250);
+            }, duration);
+        };
+
+        const downloadBlob = (blob, fileName) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        };
+
+        const getFormattedTimestamp = () => {
+            const d = new Date();
+            return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+        };
+
+        // ---------- UI 更新函数 ----------
+        const updateQualityDisplay = () => {
+            const val = parseFloat(DOM.qualitySlider.value);
+            state.currentQuality = val;
+            let text = val.toFixed(2);
+            if (val === 1.0) text = "1.00 (最高)";
+            else if (val >= 0.95) text = `${val.toFixed(2)} (极佳)`;
+            else if (val <= 0.3) text = `${val.toFixed(2)} (低画质)`;
+            DOM.qualityValueDisplay.textContent = text;
+        };
+
+        const clearConversionResults = () => {
+            state.conversionResults.forEach(res => { if (res.jpgUrl) URL.revokeObjectURL(res.jpgUrl); });
+            state.conversionResults = [];
+            DOM.resultArea.style.display = 'none';
+            DOM.resultList.innerHTML = '';
+        };
+
+        const renderFileList = () => {
+            if (state.selectedFiles.length === 0) {
+                DOM.previewContainer.style.display = 'none';
+                DOM.convertBtn.disabled = true;
+                return;
+            }
+
+            DOM.previewContainer.style.display = 'block';
+            DOM.fileCountBadge.textContent = state.selectedFiles.length;
+            DOM.fileList.innerHTML = '';
+
+            state.selectedFiles.forEach(item => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-icon">🖼️</span>
+                        <div class="file-details">
+                            <div class="file-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
+                            <div class="file-size">${formatFileSize(item.file.size)}</div>
+                        </div>
+                    </div>
+                    <button class="remove-btn" data-id="${item.id}" title="移除" aria-label="移除">✕</button>
+                `;
+                DOM.fileList.appendChild(fileItem);
+            });
+
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = Number(btn.dataset.id);
+                    state.selectedFiles = state.selectedFiles.filter(f => f.id !== id);
+                    renderFileList();
+                    if (state.selectedFiles.length === 0) {
+                        clearConversionResults();
+                    } else if (state.conversionResults.length) {
+                        clearConversionResults();
+                        showToast("文件列表变更，旧结果已清除，请重新转换", 1500);
+                    }
+                    if (state.selectedFiles.length) scrollToBottom();
+                });
+            });
+
+            DOM.convertBtn.disabled = false;
+            scrollToBottom();
+        };
+
+        const renderResultList = () => {
+            DOM.resultList.innerHTML = '';
+            if (state.conversionResults.length === 0) {
+                DOM.resultList.innerHTML = '<div class="empty-result">暂无转换结果，请上传并转换</div>';
+                return;
+            }
+
+            state.conversionResults.forEach((res, idx) => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `
+                    <div class="result-info">
+                        <div class="result-name">${escapeHtml(res.finalName)}</div>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <span class="result-badge">JPEG 画质 ${state.currentQuality.toFixed(2)}</span>
+                            <span style="font-size:0.7rem; color:#475569;">${formatFileSize(res.size)}</span>
+                        </div>
+                    </div>
+                    <button class="download-single" data-index="${idx}">下载</button>
+                `;
+                DOM.resultList.appendChild(item);
+            });
+
+            document.querySelectorAll('.download-single').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = Number(btn.dataset.index);
+                    if (!isNaN(idx) && state.conversionResults[idx]) {
+                        downloadBlob(state.conversionResults[idx].jpgBlob, state.conversionResults[idx].finalName);
+                    }
+                });
+            });
+        };
+
+        // ---------- 文件处理 ----------
+        const addFiles = (files) => {
+            const validFiles = [];
+            const allowedExt = ['heic', 'heif', 'heifs', 'heics'];
+
+            for (const file of files) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (allowedExt.includes(ext)) {
+                    validFiles.push({
+                        id: state.nextId++,
+                        file,
+                        name: file.name,
+                        size: file.size
+                    });
+                } else {
+                    showToast(`跳过: ${file.name} (不是HEIC/HEIF)`, 1200);
+                }
+            }
+
+            if (validFiles.length) {
+                state.selectedFiles.push(...validFiles);
+                renderFileList();
+                if (state.conversionResults.length) clearConversionResults();
+            } else if (files.length) {
+                showToast('未选择有效的 .heic 或 .heif 文件', 1500);
+            }
+        };
+
+        // ---------- 转换核心 ----------
+        const convertHeicToJpg = (fileItem, quality) => {
+            return new Promise((resolve, reject) => {
+                heic2any({
+                    blob: fileItem.file,
+                    toType: 'image/jpeg',
+                    quality: Math.min(1.0, Math.max(0.1, quality)),
+                    multiple: false
+                })
+                .then(blob => {
+                    if (!blob || blob.type !== 'image/jpeg') {
+                        reject(new Error('无效的JPEG输出'));
+                        return;
+                    }
+                    const originalBase = fileItem.name.replace(/\.(heic|heif|heifs|heics)$/i, '');
+                    const finalName = `${originalBase}.jpg`;
+                    const url = URL.createObjectURL(blob);
+                    resolve({
+                        originalName: fileItem.name,
+                        finalName,
+                        jpgBlob: blob,
+                        jpgUrl: url,
+                        size: blob.size
+                    });
+                })
+                .catch(reject);
+            });
+        };
+
+        const batchConvert = async () => {
+            if (!state.selectedFiles.length) {
+                showToast('没有待转换的文件', 1000);
+                return;
+            }
+
+            clearConversionResults();
+            DOM.resultArea.style.display = 'none';
+            DOM.progressArea.style.display = 'block';
+            DOM.progressFill.style.width = '0%';
+
+            const total = state.selectedFiles.length;
+            const quality = state.currentQuality;
+            DOM.progressStatus.textContent = `使用画质 ${quality.toFixed(2)}，开始转换 ${total} 个文件...`;
+
+            const results = [];
+            let completed = 0, failed = 0;
+
+            for (let i = 0; i < total; i++) {
+                const item = state.selectedFiles[i];
+                DOM.progressStatus.textContent = `[${i+1}/${total}] 转换中: ${item.name} (画质 ${quality.toFixed(2)})`;
+
+                try {
+                    const converted = await convertHeicToJpg(item, quality);
+                    results.push(converted);
+                } catch (err) {
+                    console.error(`转换失败 ${item.name}:`, err);
+                    failed++;
+                    showToast(`"${item.name}" 转换失败，可能文件损坏`, 1800);
+                }
+
+                completed++;
+                DOM.progressFill.style.width = `${(completed / total) * 100}%`;
+                await new Promise(r => setTimeout(r, 10)); // 让UI有机会更新
+            }
+
+            if (results.length === 0) {
+                DOM.progressStatus.textContent = '转换失败，没有成功生成图片。';
+                showToast('所有文件转换失败，请确认HEIC文件有效', 2000);
+                return;
+            }
+
+            DOM.progressStatus.textContent = `✅ 转换完成！成功 ${results.length}/${total} 个文件 (画质: ${quality.toFixed(2)})`;
+            state.conversionResults = results;
+            renderResultList();
+            DOM.resultArea.style.display = 'block';
+
+            showToast(
+                failed ? `成功 ${results.length} 个，失败 ${failed} 个` : `全部转换成功！共 ${results.length} 张 JPG`,
+                1500
+            );
+
+            setTimeout(() => {
+                if (DOM.resultArea.style.display === 'block') {
+                    DOM.resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 200);
+        };
+
+        // ---------- ZIP 打包下载 ----------
+        const downloadAllAsZip = async () => {
+            if (!state.conversionResults.length) {
+                showToast('没有可下载的图片', 1000);
+                return;
+            }
+            if (typeof JSZip === 'undefined') {
+                showToast('JSZip库未加载，请刷新页面', 1500);
+                return;
+            }
+
+            try {
+                const zip = new JSZip();
+                state.conversionResults.forEach(res => zip.file(res.finalName, res.jpgBlob));
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const timestamp = getFormattedTimestamp();
+                downloadBlob(zipBlob, `heic2jpg_q${state.currentQuality.toFixed(2)}_${timestamp}.zip`);
+                showToast(`打包完成，共 ${state.conversionResults.length} 张图片`, 1500);
+            } catch (err) {
+                console.error('打包失败:', err);
+                showToast('打包失败，可尝试单张下载', 1500);
+            }
+        };
+
+        // ---------- 事件绑定 ----------
+        const bindEvents = () => {
+            DOM.qualitySlider.addEventListener('input', updateQualityDisplay);
+
+            DOM.uploadArea.addEventListener('click', () => DOM.fileInput.click());
+
+            DOM.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                DOM.uploadArea.style.borderColor = '#3b82f6';
+                DOM.uploadArea.style.background = '#f0f7ff';
+            });
+
+            DOM.uploadArea.addEventListener('dragleave', () => {
+                DOM.uploadArea.style.borderColor = '#b9cedf';
+                DOM.uploadArea.style.background = '#fefefe';
+            });
+
+            DOM.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                DOM.uploadArea.style.borderColor = '#b9cedf';
+                DOM.uploadArea.style.background = '#fefefe';
+                addFiles(Array.from(e.dataTransfer.files));
+            });
+
+            DOM.fileInput.addEventListener('change', (e) => {
+                addFiles(Array.from(e.target.files));
+                DOM.fileInput.value = '';
+            });
+
+            DOM.convertBtn.addEventListener('click', () => {
+                scrollToBottom();
+                if (state.selectedFiles.length) {
+                    batchConvert();
+                } else {
+                    showToast('请先添加 HEIC 图片', 1000);
+                }
+            });
+
+            DOM.downloadAllBtn.addEventListener('click', () => {
+                if (state.conversionResults.length) {
+                    downloadAllAsZip();
+                } else {
+                    showToast('没有转换结果', 800);
+                }
+            });
+        };
+
+        // 初始化
+        const init = () => {
+            updateQualityDisplay();
+            bindEvents();
+            DOM.previewContainer.style.display = 'none';
+            DOM.resultArea.style.display = 'none';
+            DOM.progressArea.style.display = 'none';
+        };
+
+        init();
+    })();
+</script>
+</body>
+</html>
